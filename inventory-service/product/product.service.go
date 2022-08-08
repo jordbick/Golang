@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pluralsight/webservices/cors"
+	"github.com/jordbick/Golang/inventory-service/cors"
 )
 
 // product handler functionality here - for web service specific code

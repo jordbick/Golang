@@ -1,4 +1,4 @@
-module github.com/pluralsight/webservices
+module github.com/jordbick/Golang/inventory-service
 
 go 1.14
 

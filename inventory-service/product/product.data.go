@@ -9,7 +9,7 @@ import (
 	"sort"
 	"sync"
 
-	"webservices/inventory-service/database"
+	"github.com/jordbick/Golang/inventory-service/database"
 )
 
 // keep all of our data access separate from the web service code

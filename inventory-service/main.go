@@ -4,8 +4,8 @@ import (
 	"log"
 	"net/http"
 
-	"C:/Users/jorda/Documents/Go/WebServices/inventory-service/product"
-	"C:/Users/jorda/Documents/Go/WebServices/inventory-service/product"
+	"github.com/pluralsight/webservices/database"
+	"github.com/pluralsight/webservices/product"
 
 	// use underscore _ because we're not going to referencing the driver explicitly, just importing it for its side effects
 	// and tin this case because we need the driver in order for the Go SQL package to work with our database
