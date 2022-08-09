@@ -15,13 +15,13 @@ import (
 
 // Need to add a new apiBasePath variable to pass into the SetupRoutes function
 // /api for our base path
-const apiBasePath = "/api"
+const basePath = "/api"
 
 func main() {
 	// call the function to create our DB variable
 	database.SetupDatabase()
-	product.SetupRoutes(apiBasePath)
-	receipt.SetupRoutes(apiBasePath)
+	product.SetupRoutes(basePath)
+	receipt.SetupRoutes(basePath)
 	err := http.ListenAndServe(":5000", nil)
 	if err != nil {
 		log.Fatal(err)

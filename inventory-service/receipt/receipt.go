@@ -1,6 +1,7 @@
 package receipt
 
 import (
+	"io/ioutil"
 	"path/filepath"
 	"time"
 )
@@ -18,7 +19,7 @@ type Receipt struct {
 // function that will go through the list of files in our uploads folder and create a slice of receipt objects
 func GetReceipts() ([]Receipt, error) {
 	receipts := make([]Receipt, 0)
-	files, err : = ioutil.ReadDir(RecReceiptDirectory)
+	files, err := ioutil.ReadDir(ReceiptDirectory)
 	if err != nil {
 		return nil, err
 	}

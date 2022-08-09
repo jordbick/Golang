@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/jordbick/Golang/inventory-service/cors"
 )
 
 // create path variable
@@ -38,6 +40,7 @@ func handleReceipts(w http.ResponseWriter, r *http.Request) {
 		// Grab receipt out of our HTTP multipart form by using FormFile method
 		file, handler, err := r.FormFile("receipt")
 		if err != nil {
+			log.Print(err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
