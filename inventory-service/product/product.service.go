@@ -36,7 +36,11 @@ func productHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Replace the call to findProductByID with a call to getProduct, which returns a product and no integer
-	product := getProduct(productID)
+	product, err := getProduct(productID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	if product == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -69,11 +73,16 @@ func productHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// Update our code to replace the item in the slice with our call to the addOrUpdateProduct function
-		addOrUpdateProduct(updatedProduct)
+		err = updateProduct(updatedProduct)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 
 	case http.MethodDelete:
 		removeProduct(productID)
+		w.WriteHeader(http.StatusAccepted)
 
 	case http.MethodOptions:
 		return
@@ -120,7 +129,7 @@ func productsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// Logic to getNextID is now handled in our data access layer using addOrUpdateProduct function
-		_, err = addOrUpdateProduct(newProduct)
+		_, err = insertProduct(newProduct)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return

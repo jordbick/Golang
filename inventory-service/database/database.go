@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"log"
+	"time"
 )
 
 // In the SQL package within go, there's a function called Open
@@ -27,6 +28,9 @@ func SetupDatabase() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	DbConn.SetMaxOpenConns(4)
+	DbConn.SetMaxIdleConns(4)
+	DbConn.SetConnMaxLifetime(60 * time.Second)
 }
 
 // Interacting with DB
@@ -68,3 +72,75 @@ func SetupDatabase() {
 // go get -u github.com/go-sql-driver/mysql
 // also add import to main.go file
 // _ "github.com/go-sql-driver/mysql"
+
+// Other SQL statements such as INSERT, UPDATE or DELETE
+// Use DB.Exec
+// Get back as SQL Result object
+// func (rs *DB) Exec(query string, args ...interface{}) (Result, error)
+
+// Result interface has two functions
+// type Result interface {
+// LastInsertId() (int64, error)
+// RowsAffected() (int64, error)
+// }
+
+// DB type is responsible for manafing the connections to the database
+// Includes handling multiple concurrent requests at any time
+// It does this by creating a pool of connections which can be reused when finsihed with
+
+// Can use methods to configure th behaviour of the DB object and how it manages the connections to the DB
+
+// Conection Max Lifetime - Sets the max amount of time a connection may be used
+// Max Idle Connections - Sets the max number of connections in the idle connection pool
+// Max Open Connections - Sets the max number of open connections to the DB
+// Set these because for many DBs there is a max limit of connections that the DB is capable of handling
+// By setting these we can control the flow by limiting the number of connections to your DB
+
+// When max number of open connections exhausted may get connection timeouts
+// Need to use a context
+// Context = Mechanisms that allows you to set a deadline, cancel a signal, or set other request-scoped values across API boundaries and between processed
+// To do this we need to create a context object
+
+// context.WithTimeout method accepts a context and a Go time object as input. context.Background() creates a blank context
+// ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+// Change Query method to QueryContext and pass in context object
+// results, err := db.QueryContext(ctx, `select ... from ...`)
+// Now if the query exceeds the time limit that we set in the timeout, the call will cancel and return
+
+// Also QueryRowContext and ExecContext methods
+
+// File Uploads
+// Could send a file using JSON by first encoding the file into a base64 and then including that as a property in the JSON
+// Uses the decode string method which accepts a base64 string as input and returns a slice of bytes
+// func (enc *Encoding) DecodeString(s string) ([]byte, error)
+
+// Can also send file by using the HTTP multipart/form-data content type which allows us to use a HTML form to submit the raw binary data to our web service
+// This method is more efficient
+// Returns a multipart file object and a pointer to a FileHeader which contains information about the file
+// func (r *Request) FormFile(key string) (multipart.File, *multipart.FileHeader, error)
+
+// The File type implements the io.Reader function which allows us to read the file content
+// The FileHeader type can get the Filename, size and MIME type of the file
+// In order to implement this in our handler we need to first call ParseMultiPartForm on the request, passing in a size which will limit the amount of data from the request that is stored in memory
+// If the size of the request exceeds the limit then it will store data in temporary files on disk
+// func uploadFileHandler(w http.ResponseWriter, r *http.Request){
+// r.ParseMultiPartForm(5 << 20) // 5Mb
+
+// Then grab the field from the form matching the key that we pass in - Expecting the form to have a key called uploadFileName in the request
+// file, handler, err := r.FormFile("uploadFileName")
+
+// Then use OS package OpenFile func to create a new file at the given filepath
+// f, err := os.OpenFile("./filepath/" + handler.Finename, os.O_WRONLY|os.O_CREATE, 0666)
+
+// Then use the io.Copy func to copy the byte data that we read in from the request to the new file
+// io.Copy(f, file)
+
+// To handle downloads
+// Use os.Open function
+// func downloadFileHandler(w http.ResponseWriter, r *http.Request) {
+// filename = "gopher.png"
+// file, err := os.Open(fileName)
+// }
+
+// To tell the client that this is a file that should be downloaded we can set the header content disposition to attachment and give it a file name
+// w.Header.Set("Content-Disposition", "attachment; filename="+fileName)
