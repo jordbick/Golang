@@ -1,0 +1,128 @@
+Templates are specially formatted text, which are designed to interact with a data structure to produce formatted output
+
+Two packages that deal with templates in Go:
+- text/template = Base functionality for working with templates exists
+- html/template = Uses the same template, but with added security for HTML output
+
+template.New function (takes a string, which is the name of the template and will return a new template pointer):
+func New(name string) *Template 
+
+Once the template has been created, we need to parse the template text using the parse method
+template.Parse
+func (t *Template) Parse(text string) (*Template, error)
+
+After we've created our template and parsed it then we can execute it
+template.execute
+func (t *Template) Execute(wr io.Writer, data interface{}) error
+
+type BlogPost struct {
+    Header string
+    Message string
+}
+
+func main() {
+    post := BlogPost{"First Post", "Hello World"}
+    // Name of new template is post and calling parse. Now the text we're passing in contains html tags in the values, and those tags are being annotated with .Header and .Message
+    tmpl, err = template.New("post").Parse(`<h1>{{.Header}}</h1><p>{{.Message}}</p>`)
+    if err != nil {
+        panic(err)
+    }
+    // Passing in standard out as our Writer and our post variable as data, our output in the text will be valid HTML
+    err = tmpl.Execute(os.Stdout, post)
+    if err != nil {
+        panic(err)
+    }
+}
+
+
+Pipelines:
+Sequence of commands that are able to be chained together to produce some kind of an output
+Command can be a simple value/argument or functions/method calls that allow us to pass in one or more arguments
+
+Passing in static text or numbers, where it will just return the value
+{{"Hello"}}
+{{1234}}
+
+Reference fields on a struct:
+{{.Message}}
+
+Execute functions:
+{{println "Hi"}}
+{{.SayHello}}
+
+Pass in arguments to methods
+{{ .SaySomething "Bye"}}
+
+Can also pipe it to the method:
+{{"Hello" | .SaySomething}}
+
+Can pipe multiple commands in a row to continue to pass the output from one command to the next
+{{ "Hello" | .SaySomething | Printf "%s %s" "World"}}
+
+
+To loop over products we can use the range function
+Pass in data in the form of a slice, array, map or channel. When done call end
+{{range pipeline}} T1 {{end}}
+
+Also optional else keyword that can be used to execute template code in the evenet our input data has a 0 length
+{{range pipeline}} T1 {{else}} T2 {{end}}
+
+Can get the index at the current iteration by including the index and element keywords
+{{ range $index $element := pipeline }}
+
+// defining a template, calling range and passing in the dot, then printing out the vlaue at each iteration before calling end
+tmpl := "{{range .}}{{.}}{{end}}"
+func main() {
+    items := []string{"one","two","three"}
+    tmpl, _ := template.New("tmplt").Parse(items)
+    err:= tmpl.Execute(os.Stdout, post)
+}
+
+
+Template Functions
+
+and
+accepts two or more pipelines that can result in a Boolean true or false
+if all the pipelines result to true then the code within the if block will get executed
+first call and then pass in the arguments to be evaluated
+{{if and true true true}} {{end}}
+
+or 
+
+index
+allows us to access a specific element
+{{index .1}}
+
+len
+{{len .}}
+
+not
+returns the Boolean opposite
+{{if not false}}
+
+print, printf, println
+
+
+Template Operators
+==
+!=
+<
+<=
+>
+>=
+
+
+Custom Functions
+use the Template.Funcs methof to pass in any functions which we want to add to our templating capability
+accepts a FuncMap type (map of strings to interfaces) 
+func (t *Template) Funcs(funcMap FuncMap) *Template
+
+The functions we define have to return a single value or a single value and an error
+
+// adding a modulus function to check whether or not the modulus of an input is equal to 0
+// declare a new FuncMap type, and for the key we'll call mod, setting the value equal to this inline function that calculates the modulus and returns true or false
+tmp;:= "{{range &index, &element := .}}{{if mod index 2}}{{.}}{{end}}{{end}}"
+
+fm := template.FuncMap{"mod": func(i, j int) bool {return i%j == 0}}
+// Func method called, passing in our FunctionMap
+tmpl, _ := template.New("tmplt").Funcs(fm).Parse(tmpl)

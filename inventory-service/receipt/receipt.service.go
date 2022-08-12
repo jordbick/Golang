@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/jordbick/Golang/inventory-service/cors"
 )
@@ -70,8 +72,51 @@ func handleReceipts(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Parses URL to get the filename
+// Pass in the receipt's URL and the file name as the last part of the URL path
+func handleDownload(w http.ResponseWriter, r *http.Request) {
+	urlPathSegments := strings.Split(r.URL.Path, fmt.Sprintf("%s/", receiptPath))
+	if len(urlPathSegments[1:]) > 1 {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	fileName := urlPathSegments[1:][0]
+	file, err := os.Open(filepath.Join(ReceiptDirectory, fileName))
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	defer file.Close()
+
+	// Set header info on response - Response might be processed differently dependent on client that is calling the code
+	fHeader := make([]byte, 512)
+	file.Read(fHeader)
+	// http.DetectContentType function to determine what kind of file this is and use it to set the Content-Type header in our response
+	fContentType := http.DetectContentType(fHeader)
+
+	// check file size so that the client knows how much data it's going to be downloading in the response = file.Stat()
+	stat, err := file.Stat()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	fSize := strconv.FormatInt(stat.Size(), 10)
+	// set response header to
+	w.Header().Set("Content-Disposition", "attachment; filename="+fileName)
+	w.Header().Set("Content-Type", fContentType)
+	w.Header().Set("Content-Length", fSize)
+
+	// Because we have already read the file we can use the file.Seek() function to set the seeker back to the start of the file
+	file.Seek(0, 0)
+
+	// Copy byte data from the file to our ResponseWriter, which will return the file to the client
+	io.Copy(w, file)
+}
+
 // SetupRoutes which will be called from the main
 func SetupRoutes(apiBasePath string) {
 	receiptHandler := http.HandlerFunc(handleReceipts)
-	http.Handle(fmt.Sprintf("%s%s", apiBasePath, receiptPath), cors.Middleware(receiptHandler))
+	downloadHandler := http.HandlerFunc(handleDownload)
+	http.Handle(fmt.Sprintf("%s/%s", apiBasePath, receiptPath), cors.Middleware(receiptHandler))
+	http.Handle(fmt.Sprintf("%s/%s/", apiBasePath, receiptPath), cors.Middleware(downloadHandler))
 }

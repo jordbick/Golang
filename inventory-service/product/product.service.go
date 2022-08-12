@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/jordbick/Golang/inventory-service/cors"
+	"golang.org/x/net/websocket"
 )
 
 // product handler functionality here - for web service specific code
@@ -22,10 +23,13 @@ func SetupRoutes(apiBasePath string) {
 	// HandlerFunc to create handler types out of our handler functions so that we can wrap them in calls to middleware
 	handleProducts := http.HandlerFunc(productsHandler)
 	handleProduct := http.HandlerFunc(productHandler)
+	handleReports := http.HandlerFunc(handleProductReport)
 	// string argument to take a base route path from the main function
 	// wrap our handler setup with a new middleware function
 	http.Handle(fmt.Sprintf("%s/%s", apiBasePath, productsBasePath), cors.Middleware(handleProducts))
 	http.Handle(fmt.Sprintf("%s/%s/", apiBasePath, productsBasePath), cors.Middleware(handleProduct))
+	http.Handle("/websocket", websocket.Handler(productSocket))
+	http.Handle(fmt.Sprintf("%s/%s/reports", apiBasePath, productsBasePath), cors.Middleware(handleReports))
 }
 
 func productHandler(w http.ResponseWriter, r *http.Request) {

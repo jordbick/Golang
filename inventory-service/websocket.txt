@@ -1,0 +1,75 @@
+In a websocket workflow the client will send a request to the server and the server will respond,
+but that response will contain information about how to upgrade the connection to a WebSocket
+
+1. Client send a HTTP GET request to server which will have a header set to a connection upgrade and another header specifying that the client wants to upgrade the request to a websocket
+    Theres also a special key that gets utilised by the client and the server to ensure that the communication channel isn't broken/tampered with
+2. Sever responds with a special HTTP status code of 101 - Indicating a switch in protocols from HTTP to WebSocket, or WS 
+    Server responds with same upgrade WebSocket and connection upgrade header information and modifies the key sent by the client so that the client can verify that communication has been established with the web service
+    Both the client and the web server will then begin to communicate using an open WebSocket connection where either side is able to send data to the other
+
+
+Uses for websockets:
+    Chat apps - Writing messages in real time
+    Multiplayer games - Action of one player immediately happens on other players screen
+    Stock tickers 
+    System dashboards
+
+
+WebSocket Connection type (websocket.Conn)
+
+type Conn struct {
+    PayloadType byte
+    MaxPayloadBytes int
+}
+
+To use the WebSocket Connection, we can register a handler using the http.Handle function
+// The Handler function tajes a WebSocket connection 
+// Within this function we can handle our WebSocket-related code 
+func socket (ws *websocket.Conn){
+    // Handle receiving and sending data
+}
+
+func main() {
+    // http.Handle takes a handler to handle the request
+    // websocket.Handler function is a special interface that implements the serveHTTP method and thus fulfills the handler interface, which allows it to be used as a handler
+    http.Handle("/websocket", websocket.Handler(socket))
+}
+
+
+To deal with the sending and receiving of data the WebSocket has methods for reading and writing the byte payload directly, which implements the io reader and writer interfaces
+
+// websocket.Codec
+// Two objects implement this Codec which are:
+// - message (to send and receive byte or text data)
+// - JSON (to send JSON back and forth)
+type Codec struct {
+    Marshal func(v interface{}) (data []byte, payloadType byte, err error)
+    Unmarshal func(data []byte, payloadType byte, v interface{}) (err error)
+}
+
+Reads data sent into the WebSocket. Takes in a WebSocket connection and an interface 
+func (cd Codec) Receive(ws *Conn, v interface{}) (err error)
+
+// Set up go routine to listen for incoming data using Receive 
+// So if we get data that comes in  from the client, we can unmarshal it into this message object that we declared
+func socket (ws *websocket.Conn) {
+    go func (c *websocket.Conn) {
+        for {
+            var msg message
+            if err := websocket.JSON.Receive(c, &msg); err != nil {
+                break
+            }
+            fmt.Printf("received message %s\n" msg.Data)
+        }
+    }
+
+// initialise our struct with the data that we want to send and then call the .Send method, passing in our connection and our struct
+    products, _ := product.GetToTenProducts()
+    for {
+        time.Sleep(10*time.Second)
+        if err := websocket.JSON.Send(ws, products); err != nil {
+            break
+        }
+    }
+}
+
